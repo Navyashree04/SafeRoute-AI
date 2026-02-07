@@ -1,15 +1,15 @@
-# 🚗 Advanced Vehicle Collision Detection System
+#  Advanced Vehicle Collision Detection System
 
 A real-time vehicle collision warning system that detects oncoming vehicles and potential collisions using GPS coordinates, speed, and direction data. The system provides multi-level alerts (critical, warning, info) based on distance, approach angle, and time-to-collision.
 
-## 🌟 Features
+##  Features
 
 ### Core Features
 - **Real-time Vehicle Tracking**: Monitor multiple vehicles simultaneously
 - **Multi-level Alerts**: 
-  - 🔴 **Critical**: Collision imminent (<30m)
-  - 🟡 **Warning**: Oncoming vehicle detected (<80m)
-  - 🔵 **Info**: Vehicle approaching (<150m)
+  -  **Critical**: Collision imminent (<30m)
+  -  **Warning**: Oncoming vehicle detected (<80m)
+  -  **Info**: Vehicle approaching (<150m)
 - **Smart Detection**: 
   - Oncoming vehicle detection (opposite directions)
   - Cross-traffic warnings
@@ -27,13 +27,13 @@ A real-time vehicle collision warning system that detects oncoming vehicles and 
 - Automatic cleanup of inactive vehicles
 - Comprehensive logging
 
-## 📋 Requirements
+##  Requirements
 
 - Python 3.8+
 - Modern web browser (Chrome, Firefox, Safari, Edge)
 - Network connection (for local testing, localhost is sufficient)
 
-## 🚀 Installation
+##  Installation
 
 ### 1. Clone or Download the Project
 
@@ -61,7 +61,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## 🎮 Usage
+##  Usage
 
 ### Starting the System
 
@@ -108,7 +108,7 @@ start index.html
 
 **Select your vehicle ID** from the dropdown to see alerts for your vehicle.
 
-## 🎯 How It Works
+##  How It Works
 
 ### Architecture
 
@@ -163,7 +163,7 @@ start index.html
 | Warning | < 80m | Oncoming/Crossing + Approaching |
 | Info | < 150m | Oncoming |
 
-## ⚙️ Configuration
+##  Configuration
 
 ### Server Configuration
 
@@ -206,7 +206,7 @@ Available scenarios:
 - `variable_speed`: Varying speeds
 - `accelerating`: Gradual acceleration
 
-## 📊 API Endpoints
+##  API Endpoints
 
 The server provides REST API endpoints for analytics:
 
@@ -243,7 +243,7 @@ curl http://localhost:5000/api/vehicle/A
 curl http://localhost:5000/api/alerts
 ```
 
-## 🔧 Customization
+##  Customization
 
 ### Adding More Vehicles
 
@@ -289,7 +289,7 @@ START_LAT = YOUR_LAT
 START_LON = YOUR_LON
 ```
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Server won't start
 
@@ -325,7 +325,7 @@ taskkill /PID <PID> /F
 - **Check**: Browser console for JavaScript errors (F12)
 - **Alternative**: Use offline map tiles if needed
 
-## 📈 Future Enhancements
+##  Future Enhancements
 
 Potential improvements for the system:
 
@@ -342,15 +342,15 @@ Potential improvements for the system:
 - [ ] Database integration for historical analysis
 - [ ] Heat maps for accident-prone areas
 
-## 📝 License
+## License
 
 This project is provided for educational and research purposes.
 
-## 🤝 Contributing
+##  Contributing
 
 Feel free to fork this project and submit pull requests for improvements.
 
-## 📧 Support
+##  Support
 
 For issues or questions:
 1. Check the troubleshooting section
@@ -358,7 +358,7 @@ For issues or questions:
 3. Check browser console for errors
 4. Verify all dependencies are installed
 
-## 🎓 Educational Use
+## Educational Use
 
 This system is ideal for:
 - IoT and embedded systems courses
@@ -367,7 +367,7 @@ This system is ideal for:
 - Computer science capstone projects
 - Smart city initiatives
 
-## ⚠️ Disclaimer
+##  Disclaimer
 
 This is a demonstration/educational system. For production use in real vehicles, additional safety features, redundancy, and professional testing are required.
 
