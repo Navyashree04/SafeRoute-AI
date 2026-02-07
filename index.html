@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Vehicle Collision Detection System</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        #container {
+            display: flex;
+            height: 100vh;
+        }
+
+        #map {
+            flex: 1;
+            height: 100vh;
+        }
+
+        #sidebar {
+            width: 350px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .status {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .connected {
+            background: #4ade80;
+        }
+
+        .disconnected {
+            background: #ef4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .vehicle-selector {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .vehicle-selector label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .vehicle-selector select {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            background: white;
+            color: #333;
+        }
+
+        .stats {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .stats h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .alerts-panel {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .alerts-panel h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .alert-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            font-size: 14px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .alert-critical {
+            background: #ef4444;
+            border-left: 4px solid #dc2626;
+            font-weight: 600;
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .alert-warning {
+            background: #f59e0b;
+            border-left: 4px solid #d97706;
+        }
+
+        .alert-info {
+            background: #3b82f6;
+            border-left: 4px solid #2563eb;
+        }
+
+        .alert-meta {
+            font-size: 12px;
+            margin-top: 5px;
+            opacity: 0.9;
+        }
+
+        .vehicles-list {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .vehicles-list h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .vehicle-card {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .vehicle-card strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .vehicle-info {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        /* Custom marker styles */
+        .vehicle-marker {
+            background: none;
+            border: none;
+        }
+
+        /* Popup styles */
+        .leaflet-popup-content {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .popup-danger {
+            border-left: 4px solid #ef4444;
+            padding-left: 8px;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            #sidebar {
+                width: 100%;
+                height: 40vh;
+                position: absolute;
+                bottom: 0;
+                z-index: 1000;
+            }
+
+            #map {
+                height: 60vh;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <div id="map"></div>
+        <div id="sidebar">
+            <h1>🚗 Vehicle Monitor</h1>
+            
+            <div class="status">
+                <span class="status-dot disconnected" id="statusDot"></span>
+                <span id="statusText">Connecting...</span>
+            </div>
+
+            <div class="vehicle-selector">
+                <label for="myVehicleSelect">Your Vehicle ID:</label>
+                <select id="myVehicleSelect">
+                    <option value="">-- Select Vehicle --</option>
+                    <option value="A">Vehicle A</option>
+                    <option value="B">Vehicle B</option>
+                    <option value="C">Vehicle C</option>
+                    <option value="D">Vehicle D</option>
+                </select>
+            </div>
+
+            <div class="stats">
+                <h3>📊 Statistics</h3>
+                <div class="stat-item">
+                    <span>Active Vehicles:</span>
+                    <strong id="activeVehicles">0</strong>
+                </div>
+                <div class="stat-item">
+                    <span>Your Speed:</span>
+                    <strong id="mySpeed">-- km/h</strong>
+                </div>
+                <div class="stat-item">
+                    <span>Your Direction:</span>
+                    <strong id="myDirection">--°</strong>
+                </div>
+            </div>
+
+            <div class="alerts-panel">
+                <h3>⚠️ Active Alerts</h3>
+                <div id="alertsList">
+                    <div style="opacity: 0.6; text-align: center;">No alerts</div>
+                </div>
+            </div>
+
+            <div class="vehicles-list">
+                <h3>🚙 Active Vehicles</h3>
+                <div id="vehiclesList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const SERVER_URL = "http://localhost:5000";
+        let MY_CAR_ID = localStorage.getItem('myVehicleId') || null;
+
+        // Initialize map
+        const map = L.map('map').setView([12.9716, 77.5946], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Icons
+        const normalIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png',
+            iconSize: [40, 40],
+            iconAnchor: [20, 40]
+        });
+
+        const myCarIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/2554/2554977.png',
+            iconSize: [45, 45],
+            iconAnchor: [22, 45]
+        });
+
+        const criticalIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/595/595067.png',
+            iconSize: [40, 40],
+            iconAnchor: [20, 40]
+        });
+
+        const warningIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/1540/1540984.png',
+            iconSize: [40, 40],
+            iconAnchor: [20, 40]
+        });
+
+        // Socket.IO connection
+        const socket = io(SERVER_URL);
+        const markers = {};
+        const trails = {};
+
+        // Vehicle selector
+        const vehicleSelect = document.getElementById('myVehicleSelect');
+        if (MY_CAR_ID) {
+            vehicleSelect.value = MY_CAR_ID;
+        }
+
+        vehicleSelect.addEventListener('change', (e) => {
+            MY_CAR_ID = e.target.value;
+            localStorage.setItem('myVehicleId', MY_CAR_ID);
+            updateDisplay();
+        });
+
+        // Socket events
+        socket.on('connect', () => {
+            document.getElementById('statusDot').className = 'status-dot connected';
+            document.getElementById('statusText').textContent = 'Connected';
+            console.log('Connected to server');
+        });
+
+        socket.on('disconnect', () => {
+            document.getElementById('statusDot').className = 'status-dot disconnected';
+            document.getElementById('statusText').textContent = 'Disconnected';
+            console.log('Disconnected from server');
+        });
+
+        socket.on('vehicle_data', (data) => {
+            updateMap(data);
+            updateStats(data);
+            updateAlerts(data);
+            updateVehiclesList(data);
+        });
+
+        socket.on('error', (error) => {
+            console.error('Server error:', error);
+        });
+
+        // Update map with vehicle positions
+        function updateMap(data) {
+            const vehicles = data.vehicles;
+            const alerts = data.alerts;
+
+            for (const id in vehicles) {
+                const v = vehicles[id];
+                const myAlerts = alerts[MY_CAR_ID] || [];
+                const alertData = myAlerts.find(a => a.target_vehicle === id);
+
+                // Determine icon
+                let icon = normalIcon;
+                if (id === MY_CAR_ID) {
+                    icon = myCarIcon;
+                } else if (alertData) {
+                    icon = alertData.severity === 'critical' ? criticalIcon : warningIcon;
+                }
+
+                // Create popup content
+                const popup = `
+                    <div class="${alertData ? 'popup-danger' : ''}">
+                        <strong>Vehicle ${id}</strong><br>
+                        Speed: ${v.speed} km/h<br>
+                        Direction: ${v.direction}°<br>
+                        ${alertData ? `
+                            <br><strong style="color: ${
+                                alertData.severity === 'critical' ? '#ef4444' :
+                                alertData.severity === 'warning' ? '#f59e0b' : '#3b82f6'
+                            }">
+                                ${alertData.message}
+                            </strong><br>
+                            Distance: ${alertData.distance}m<br>
+                            ${alertData.time_to_collision ? 
+                                `TTC: ${alertData.time_to_collision}s` : ''}
+                        ` : ''}
+                    </div>
+                `;
+
+                // Update or create marker
+                if (!markers[id]) {
+                    markers[id] = L.marker([v.lat, v.lon], { icon })
+                        .addTo(map)
+                        .bindPopup(popup);
+                    
+                    // Create trail for vehicle
+                    trails[id] = L.polyline([[v.lat, v.lon]], {
+                        color: id === MY_CAR_ID ? '#3b82f6' : '#666',
+                        weight: 2,
+                        opacity: 0.6
+                    }).addTo(map);
+                } else {
+                    markers[id].setLatLng([v.lat, v.lon]);
+                    markers[id].setIcon(icon);
+                    markers[id].setPopupContent(popup);
+                    
+                    // Update trail
+                    const positions = trails[id].getLatLngs();
+                    positions.push([v.lat, v.lon]);
+                    if (positions.length > 30) positions.shift(); // Keep last 30 points
+                    trails[id].setLatLngs(positions);
+                }
+
+                // Auto-center on my car
+                if (id === MY_CAR_ID) {
+                    map.panTo([v.lat, v.lon]);
+                }
+            }
+
+            // Remove old markers
+            for (const id in markers) {
+                if (!(id in vehicles)) {
+                    map.removeLayer(markers[id]);
+                    map.removeLayer(trails[id]);
+                    delete markers[id];
+                    delete trails[id];
+                }
+            }
+        }
+
+        // Update statistics
+        function updateStats(data) {
+            const vehicles = data.vehicles;
+            
+            document.getElementById('activeVehicles').textContent = Object.keys(vehicles).length;
+
+            if (MY_CAR_ID && vehicles[MY_CAR_ID]) {
+                const myVehicle = vehicles[MY_CAR_ID];
+                document.getElementById('mySpeed').textContent = `${myVehicle.speed} km/h`;
+                document.getElementById('myDirection').textContent = `${myVehicle.direction}°`;
+            } else {
+                document.getElementById('mySpeed').textContent = '-- km/h';
+                document.getElementById('myDirection').textContent = '--°';
+            }
+        }
+
+        // Update alerts panel
+        function updateAlerts(data) {
+            const alertsList = document.getElementById('alertsList');
+            const myAlerts = data.alerts[MY_CAR_ID] || [];
+
+            if (myAlerts.length === 0) {
+                alertsList.innerHTML = '<div style="opacity: 0.6; text-align: center;">No alerts</div>';
+                return;
+            }
+
+            // Sort by severity
+            const severityOrder = { critical: 0, warning: 1, info: 2 };
+            myAlerts.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+
+            alertsList.innerHTML = myAlerts.map(alert => `
+                <div class="alert-item alert-${alert.severity}">
+                    ${alert.message}
+                    <div class="alert-meta">
+                        Distance: ${alert.distance}m | 
+                        Relative Speed: ${alert.relative_speed} km/h
+                        ${alert.time_to_collision ? ` | TTC: ${alert.time_to_collision}s` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            // Play alert sound for critical alerts
+            if (myAlerts.some(a => a.severity === 'critical')) {
+                playAlertSound();
+            }
+        }
+
+        // Update vehicles list
+        function updateVehiclesList(data) {
+            const vehiclesList = document.getElementById('vehiclesList');
+            const vehicles = data.vehicles;
+
+            if (Object.keys(vehicles).length === 0) {
+                vehiclesList.innerHTML = '<div style="opacity: 0.6; text-align: center;">No vehicles</div>';
+                return;
+            }
+
+            vehiclesList.innerHTML = Object.entries(vehicles).map(([id, v]) => `
+                <div class="vehicle-card">
+                    <strong>🚗 Vehicle ${id} ${id === MY_CAR_ID ? '(You)' : ''}</strong>
+                    <div class="vehicle-info">
+                        Speed: ${v.speed} km/h | Direction: ${v.direction}°<br>
+                        Position: ${v.lat.toFixed(4)}, ${v.lon.toFixed(4)}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Play alert sound (simple beep)
+        let lastAlertTime = 0;
+        function playAlertSound() {
+            const now = Date.now();
+            if (now - lastAlertTime > 2000) { // Throttle to once per 2 seconds
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+                
+                lastAlertTime = now;
+            }
+        }
+
+        function updateDisplay() {
+            // Force refresh
+            console.log('Updated display for vehicle:', MY_CAR_ID);
+        }
+    </script>
+</body>
+</html>
